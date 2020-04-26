@@ -1,0 +1,29 @@
+extends layout
+
+block content
+  style.
+    h1 {
+      color: #{choice?'#ccc':'#000'};
+    }
+    #mychoice {
+      font-size: 200%;
+      color: #c00;
+    }
+  script(src="jquery.min.js")
+  script.
+    $(document).ready(() => {
+      $('#choose').click(function() {
+        $.get('/choose')
+          .done(() => location.reload())
+          .fail(e => $('#error').text('Что-то пошло не так'))
+      })
+    })
+
+  h1 Выберите задачу
+  p Уже выбрано #{usedCount} из #{totalCount}
+  if choice
+    h1#mychoice Ваш выбор: #{choice}
+  else
+    input#choose(type="button", value="Выбрать")
+  
+  #error

@@ -1,0 +1,30 @@
+extends layout
+block content
+  script(src="jquery.min.js")
+  script.
+    $(document).ready(() => {
+        let err = e => $('#error').text('Что-то пошло не так')
+        let reload = () => location.reload()
+        let handle = x => x.done(reload).fail(err)
+        $('#reset').click(function() {
+            handle($.get('/reset-9dc5086f-acdd-42c7-9c1b-8412483afbfb'))
+        })
+        $('#upload').click(function() {
+            handle($.get(
+                '/upload-9dc5086f-acdd-42c7-9c1b-8412483afbfb',
+                { text: $('#newtasks').val() }
+            ))
+        })
+    })
+
+  h1 Текущие задачи#{data.cacheIndex===undefined? '': ' (#'+data.cacheIndex+')'}
+  #items !{data.format()}
+  div
+    input#reset(type="button", value="Сбросить выбор")
+  h1 Новые задачи
+  textarea#newtasks
+  div
+    input#upload(type="button", value="Загрузить")
+  #error
+  #h1 Предыдущих наборов задач: #{prevCount}
+  
