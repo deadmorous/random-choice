@@ -18,7 +18,12 @@ block content
     })
 
   h1 Текущие задачи#{data.cacheIndex===undefined? '': ' (#'+data.cacheIndex+')'}
-  #items !{data.format()}
+  h2 Статус заданий
+  p#items !{data.format()}
+  h2 Кто что выбрал
+  p#used !{data.formatUsed()}
+  h2 Задания
+  p#text !{data.text()}
   div
     input#reset(type="button", value="Сбросить выбор")
   h1 Новые задачи

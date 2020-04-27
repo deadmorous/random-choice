@@ -9,6 +9,9 @@ block content
       font-size: 200%;
       color: #c00;
     }
+    .userId {
+      color: #aaa;
+    }
   script(src="/javascripts/jquery.min.js")
   script.
     $(document).ready(() => {
@@ -25,5 +28,5 @@ block content
     h1#mychoice Ваш выбор: #{choice}
   else
     input#choose(type="button", value="Выбрать")
-  
+  p.userId User id: #{userId}
   #error

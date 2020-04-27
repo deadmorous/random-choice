@@ -1,13 +1,15 @@
-var express = require('express');
+const express = require('express');
 const _ = require('lodash')
-var router = express.Router();
+const cookie = require('cookie');
+
+const router = express.Router();
 
 oldChoices = []
 
 class Data
 {
   constructor() {
-    this.items = ['1', '2', '3']
+    this.items = _.range(1, 30)
     this.used = {}
     this.avail = _.range(this.items.length)
   }
@@ -51,6 +53,14 @@ class Data
     }
     return lines.join('<br/>')
   }
+  formatUsed() {
+    let lines = []
+    _.each(this.used, (v, k) => lines.push(v + ': ' + k))
+    return lines.join('<br/>')
+  }
+  text() {
+    return this.items.join('<br/>')
+  }
   load(text) {
     this.items = text.trim().split(/\r?\n/)
     this.resetChoices()
@@ -78,17 +88,36 @@ function restore(index) {
     return false
 }
 
+function randomString() {
+  // https://gist.github.com/6174/6062387
+  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+}
+
 /* GET home page. */
 router
+  .use(function (req, res, next) {
+    if (!req.cookies.userId) {
+      // Set a new cookie with the userId
+      res.setHeader('Set-Cookie', cookie.serialize('userId', randomString(), {
+        httpOnly: true,
+        maxAge: 60 * 60 * 24 * 365 // 1 year
+      }));
+      // Redirect back after setting cookie
+      res.setHeader('Location', req.headers.referer || '/');
+      return res.sendStatus(302);
+    }
+    next()
+  })
   .get('/', function(req, res, next) {
     res.render('index', {
       totalCount: data.items.length,
       usedCount: data.usedCount(),
-      choice: data.choice(req.ip)
+      choice: data.choice(req.cookies.userId),
+      userId: req.cookies.userId
     })
   })
   .get('/choose', function(req, res, next) {
-    res.send({choice: data.choose(req.ip)});
+    res.send({choice: data.choose(req.cookies.userId)});
   })
   .get('/admin-9dc5086f-acdd-42c7-9c1b-8412483afbfb', function(req, res, next) {
     res.render('admin', { data: data, prevCount: oldChoices.length });
@@ -105,6 +134,17 @@ router
   })
   .get('/prev-9dc5086f-acdd-42c7-9c1b-8412483afbfb', function(req, res, next) {
     res.sendStatus(restore(req.query.n)? 200: 500)
+  })
+  .get('/setUserId-5acf4296-deef-4367-ba1c-5ec4f987691e', function(req, res, next) {
+      // Set a new cookie with the userId
+      let userId = req.query.userId
+      if (!(userId && userId.length > 10))
+        return res.sendStatus(400)
+      res.setHeader('Set-Cookie', cookie.serialize('userId', userId, {
+        httpOnly: true,
+        maxAge: 60 * 60 * 24 * 365 // 1 year
+      }));
+      return res.sendStatus(200);
   })
 
 module.exports = router;
