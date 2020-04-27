@@ -4,12 +4,11 @@ const cookie = require('cookie');
 
 const router = express.Router();
 
-oldChoices = []
-
 class Data
 {
   constructor() {
-    this.items = _.range(1, 30)
+    this.items = _.range(1, 31)
+    this.topic = 'Testing'
     this.used = {}
     this.avail = _.range(this.items.length)
   }
@@ -41,7 +40,7 @@ class Data
   format() {
     let lines = []
     for (let i=0, iavail=0; i<this.items.length; ++i) {
-      let text = this.items[i]
+      let text = i.toString() + ': ' + this.items[i]
       if (this.avail[iavail] === i) {
         text += " (доступно)"
         ++iavail
@@ -51,42 +50,23 @@ class Data
       }
       lines.push(text)
     }
-    return lines.join('<br/>')
+    return `<h3>${this.topic}</h3>` + lines.join('<br/>')
   }
   formatUsed() {
     let lines = []
-    _.each(this.used, (v, k) => lines.push(v + ': ' + k))
-    return lines.join('<br/>')
+    _.each(this.used, (v, k) => lines.push(`  ${k}: ${v}`))
+    return '{<br/>' + lines.join(',<br/>') + '<br/>}'
   }
   text() {
-    return this.items.join('<br/>')
+    return this.topic + '<br/>' + this.items.join('<br/>')
   }
   load(text) {
     this.items = text.trim().split(/\r?\n/)
+    this.topic = this.items.splice(0, 1)[0]
     this.resetChoices()
   }
 }
-let data = new Data
-
-function backup() {
-  if (data.cacheIndex === undefined) {
-    data.cacheIndex = oldChoices.length
-    oldChoices.push(data)
-  }
-  else
-    oldChoices[data.cacheIndex] = data
-}
-
-function restore(index) {
-  let d = oldChoices[index]
-  if (d) {
-    backup()
-    data = d
-    return true
-  }
-  else
-    return false
-}
+allChoices = [new Data]
 
 function randomString() {
   // https://gist.github.com/6174/6062387
@@ -108,32 +88,53 @@ router
     }
     next()
   })
+  .use(function(req, res, next) {
+    if (req.query.stage === undefined)
+      req.query.stage = 0
+    else
+      req.query.stage = +req.query.stage
+    if (req.query.stage >= 0 && req.query.stage < allChoices.length) {
+      req.currentData = allChoices[req.query.stage]
+      next()
+    }
+    else {
+      res.sendStatus(400)
+    }  
+  })
   .get('/', function(req, res, next) {
+    let d = req.currentData
     res.render('index', {
-      totalCount: data.items.length,
-      usedCount: data.usedCount(),
-      choice: data.choice(req.cookies.userId),
+      topic: d.topic,
+      totalCount: d.items.length,
+      usedCount: d.usedCount(),
+      choice: d.choice(req.cookies.userId),
       userId: req.cookies.userId
     })
   })
   .get('/choose', function(req, res, next) {
-    res.send({choice: data.choose(req.cookies.userId)});
+    res.send({choice: req.currentData.choose(req.cookies.userId)});
   })
   .get('/admin-9dc5086f-acdd-42c7-9c1b-8412483afbfb', function(req, res, next) {
-    res.render('admin', { data: data, prevCount: oldChoices.length });
+    res.render('admin', { data: req.currentData, stageCount: allChoices.length });
   })
   .get('/reset-9dc5086f-acdd-42c7-9c1b-8412483afbfb', function(req, res, next) {
-    data.resetChoices()
+    req.currentData.resetChoices()
     res.sendStatus(200)
   })
   .get('/upload-9dc5086f-acdd-42c7-9c1b-8412483afbfb', function(req, res, next) {
-    backup()
-    data = new Data
-    data.load(req.query.text)
+    let d = new Data
+    allChoices.push(d)
+    d.load(req.query.text)
     res.sendStatus(200)
   })
-  .get('/prev-9dc5086f-acdd-42c7-9c1b-8412483afbfb', function(req, res, next) {
-    res.sendStatus(restore(req.query.n)? 200: 500)
+  .get('/remove-9dc5086f-acdd-42c7-9c1b-8412483afbfb', function(req, res, next) {
+    if (allChoices.length > 1) {
+      allChoices.splice(req.query.stage, 1)
+      res.sendStatus(200)
+    }
+    else {
+      res.sendStatus(400)
+    }
   })
   .get('/setUserId-5acf4296-deef-4367-ba1c-5ec4f987691e', function(req, res, next) {
       // Set a new cookie with the userId

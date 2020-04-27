@@ -16,16 +16,17 @@ block content
   script.
     $(document).ready(() => {
       $('#choose').click(function() {
-        $.get('/choose')
+        $.get('/choose'+window.location.search)
           .done(() => location.reload())
           .fail(e => $('#error').text('Что-то пошло не так'))
       })
     })
 
-  h1 Выберите задачу
+  h1 Тема: #{topic}
+  h2 Выберите задачу
   p Уже выбрано #{usedCount} из #{totalCount}
   if choice
-    h1#mychoice Ваш выбор: #{choice}
+    h2#mychoice Вам досталась задача #{choice}
   else
     input#choose(type="button", value="Выбрать")
   p.userId User id: #{userId}

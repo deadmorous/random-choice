@@ -7,13 +7,16 @@ block content
         let reload = () => location.reload()
         let handle = x => x.done(reload).fail(err)
         $('#reset').click(function() {
-            handle($.get('/reset-9dc5086f-acdd-42c7-9c1b-8412483afbfb'))
+            handle($.get('/reset-9dc5086f-acdd-42c7-9c1b-8412483afbfb'+window.location.search))
         })
         $('#upload').click(function() {
             handle($.get(
                 '/upload-9dc5086f-acdd-42c7-9c1b-8412483afbfb',
                 { text: $('#newtasks').val() }
             ))
+        })
+        $('#remove').click(function() {
+            handle($.get('/remove-9dc5086f-acdd-42c7-9c1b-8412483afbfb'+window.location.search))
         })
     })
 
@@ -30,6 +33,7 @@ block content
   textarea#newtasks
   div
     input#upload(type="button", value="Загрузить")
+    input#remove(type="button", value="Удалить")
   #error
-  #h1 Предыдущих наборов задач: #{prevCount}
+  #h1 Всего наборов задач: #{stageCount}
   
